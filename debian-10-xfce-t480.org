@@ -1,0 +1,240 @@
+#+TITLE: Debian 10 (buster) with Xfce on a Thinkpad (T470, T480)
+#+AUTHOR: Adam Schwartz
+#+DATE: February 24, 2019
+#+OPTIONS: ':true *:true toc:nil num:nil
+* Sudo
+  #+BEGIN_SRC sh
+    su -
+    adduser <user> sudo
+  #+END_SRC
+
+* Remove LibreOffice
+  #+BEGIN_SRC sh
+    sudo apt-get remove --purge libreoffice*
+    sudo apt-get clean
+    sudo apt-get autoremove
+  #+END_SRC
+
+* Keyboard
+  See =/usr/share/X11/xkb/rules/base.lst= for all options.
+** Dvorak
+   #+BEGIN_SRC sh
+     #!/usr/bin/env bash
+     setxkbmap -layout dvorak -option ctrl:nocaps
+   #+END_SRC
+
+** Qwerty
+   #+BEGIN_SRC sh
+     #!/usr/bin/env bash
+     setxkbmap -layout us -option ctrl:nocaps
+   #+END_SRC
+
+** TrackPoint
+   Sometimes the tracking speed isn't quite right.
+   #+BEGIN_SRC sh
+     #!/bin/bash
+     xinput set-prop "TPPS/2 IBM TrackPoint" "libinput Accel Speed" "-0.44"
+   #+END_SRC
+
+** Emacs bindings in GTK+
+   #+BEGIN_SRC text
+     Applications -> Settings Manager -> Settings Editor -> xsettings -> Gtk -> KeyThemeName = Emacs
+   #+END_SRC
+
+** Volume Keys
+   Add =Pulse Audio Plugin= to panel.
+
+* System
+  #+BEGIN_SRC sh
+    aptitude install tlp ufw fwupd
+  #+END_SRC
+
+** Firewall
+   #+BEGIN_SRC sh
+     ufw enable
+   #+END_SRC
+
+** Power Management
+   #+BEGIN_SRC sh
+     systemctl enable tlp.service
+     systemctl start tlp.service
+   #+END_SRC
+
+** Firmware / BIOS Update
+   1. Set BIOS to boot UEFI only.
+   2. Take your time and pay attention to any warnings after running these commands.
+   3. Keep your computer connected to AC power and Ethernet if possible, usually takes 3-5 minutes.
+   4. After about an hour, if you are caught at a blank screen and the
+      power button is unresponsive, unplug from AC power and disconnect
+      the external battery. Once the internal battery is drained, you
+      should be able to reboot.
+
+   #+BEGIN_SRC sh
+     # prepare device for firmware update
+     fwupdmgr get-devices
+     fwupdmgr refresh
+     fwupdmgr get-updates
+
+     # perform firmware update
+     fwupdmgr update
+   #+END_SRC
+
+** $EDITOR
+   Force =$EDITOR= to be system wide
+   #+BEGIN_SRC sh
+     update-alternatives --config editor
+   #+END_SRC
+
+* Tools
+  #+BEGIN_SRC sh
+    aptitude install vim git curl wget rsync xinput ripgrep fzf locate fish pass rxvt-unicode tmux vlc
+  #+END_SRC
+** Emacs
+   https://github.com/anschwa/emacs.d
+   #+BEGIN_SRC sh
+     aptitude install emacs-lucid
+   #+END_SRC
+
+** Fish
+   Check that =fish= is being recognized as a valid shell, then make it the default.
+   #+BEGIN_SRC sh
+     cat /etc/shells
+     chsh -s /usr/bin/fish
+   #+END_SRC
+
+** LaTeX
+   There are a few options here, =texlive-xetex= is a good place to start.
+   #+BEGIN_SRC sh
+     aptitude install texlive-xetex
+   #+END_SRC
+
+* Display
+** Themes
+   You can add themes to =/usr/share/themes/= and select it from the =Window Manager= settings.
+
+** Fonts
+   Use proper font rendering. (Say yes to everything except bitmaps)
+   #+BEGIN_SRC sh
+     dpkg-reconfigure fontconfig-config
+   #+END_SRC
+
+*** Monospace
+    #+BEGIN_SRC sh
+      aptitude install fonts-inconsolata
+    #+END_SRC
+
+** Screen Tearing
+   #+BEGIN_SRC text
+     # /usr/share/X11/xorg.conf.d/20-intel.conf
+     Section "Device"
+       Identifier  "Intel Graphics"
+       Driver      "intel"
+       Option      "AccelMethod"  "sna"
+       Option      "TearFree"     "true"
+     EndSection
+   #+END_SRC
+
+* Desktop Environment
+** Login Manager (lightdm)
+   To show a list of users during login set ~greeter-hide-users=false~
+   in =/usr/share/lightdm/lightdm.conf.d/01_debian.conf=.
+
+   You can use =lightdm --show-config= to verify your changes and see the
+   location of other configuration files.
+
+** Desktop Icons
+   Don't put a background color on filenames unless they're selected.
+
+   #+BEGIN_SRC text
+     # $HOME/.gtkrc-2.0
+     style "xfdesktop-icon-view" {
+           # Remove background color on desktop icon filename.
+
+           XfdesktopIconView::label-alpha = 0
+           XfdesktopIconView::selected-label-alpha = 170
+
+           base[NORMAL] = "#cccccc"
+           base[SELECTED] = "#cccccc"
+           base[ACTIVE] = "#cccccc"
+
+           fg[NORMAL] = "#ffffff"
+           fg[SELECTED] = "#000000"
+           fg[ACTIVE] = "#000000"
+     }
+     widget_class "*XfdesktopIconView*" style "xfdesktop-icon-view"
+   #+END_SRC
+
+* Additional Packages
+  Usually, if you have to install from a =.deb= this is all you need to do:
+  #+BEGIN_SRC sh
+    dpkg -i <package>.deb  # attempt to install
+    aptitude install -f    # resolve dependencies
+  #+END_SRC
+
+** Golang
+   Go is a bit different, all you need to do here is extract the archive.
+   #+BEGIN_SRC sh
+     tar -C /usr/local -xzf <go-archive>.tar.gz
+   #+END_SRC
+
+** Docker
+   The [[https://docs.docker.com/install/linux/docker-ce/debian/][official install guide]] is usually pretty good.
+
+   #+BEGIN_SRC sh
+     # prerequisite packages (some will already be installed)
+     aptitude install \
+              apt-transport-https \
+              ca-certificates \
+              curl \
+              gnupg2 \
+              software-properties-common
+
+     # add Docker's GPG key
+     curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+
+     # verify you have the correct fingerprint
+     apt-key fingerprint 0EBFCD88
+
+     # add the Docker repository
+     add-apt-repository \
+          "deb [arch=amd64] https://download.docker.com/linux/debian \
+          $(lsb_release -cs) \
+          stable"
+
+     # install
+     aptitude update
+     aptitude install docker-ce docker-ce-cli containerd.io
+   #+END_SRC
+
+** Compose
+   =docker-compose= has [[https://docs.docker.com/compose/install/][similar instructions]] for Linux.
+
+   #+BEGIN_SRC sh
+     curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+     chmod +x /usr/local/bin/docker-compose
+   #+END_SRC
+
+* SSH
+  When bringing over an =.ssh/= directory from another machine, you might need to fix some permissions.
+  #+BEGIN_SRC sh
+    chown -R $USER:$USER $HOME/.ssh/
+    chmod 600 $HOME/.ssh/config
+    chmod 600 $HOME/.ssh/id_rsa
+  #+END_SRC
+
+* GPG
+  Either import your old keys, or if setting up a new machine, usually bringing in the entire =.gnugpg/= directory is enough.
+  Again, you might need to fix some permissions:
+  #+BEGIN_SRC sh
+    chown -R $USER:$USER $HOME/.gnugpg
+    chmod 700 $HOME/.gnupg/
+  #+END_SRC
+
+* Passwords
+   Once you have your private keys imported, =.password-store= should work as-is.
+   Otherwise you can initialize a new one with the same key and copy the contents over with =git= or =rsync=.
+   #+BEGIN_SRC sh
+     gpg --list-secret-keys
+     pass init <KEY>
+   #+END_SRC
