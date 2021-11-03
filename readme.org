@@ -28,3 +28,9 @@ evdev:*
 # evdev:name:Logitech M570:*
 
 #+END_SRC
+
+Luckily GNOME let's us enable scroll wheel emulation through ~gsettings~.
+(The middle mouse button is usually ~2~)
+#+BEGIN_SRC text
+gsettings set org.gnome.desktop.peripherals.trackball scroll-wheel-emulation-button <button_id>
+#+END
