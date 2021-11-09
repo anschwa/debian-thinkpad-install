@@ -5,7 +5,7 @@
 
 * Mouse and Keyboard
 ** Unbinding system shortcuts that don't appear in the GNOME ~Settings~ app.
-At some point ~C-e~, ~C-S-e~, and ~C-S-u~ got hijacked [1] by the system for an emoji picker. Fortunately we can disable it without too much effort.
+At some point ~C-e~, ~C-S-e~, and ~C-S-u~ got hijacked[1] by the system for an emoji picker. Fortunately we can disable it without too much effort.
 #+BEGIN_SRC
 ibus-setup # Emoji -> Keyboard Shortcuts -> (Emoji Annotation & Unicode Code point) -> Delete
 #+END_SRC
