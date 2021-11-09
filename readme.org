@@ -1,9 +1,23 @@
-#+TITLE: Desktop Linux
+#+TITLE: Desktop Linux (GNOME, Wayland, fedora)
 #+AUTHOR: Adam Schwartz
 #+DATE: January 17, 2021
 #+OPTIONS: ':true *:true toc:nil num:nil ^:nil
 
 * Mouse and Keyboard
+** Unbinding system shortcuts that don't appear in the GNOME ~Settings~ app.
+At some point ~C-e~, ~C-S-e~, and ~C-S-u~ got hijacked [1] by the system for an emoji picker. Fortunately we can disable it without too much effort.
+#+BEGIN_SRC
+ibus-setup # Emoji -> Keyboard Shortcuts -> (Emoji Annotation & Unicode Code point) -> Delete
+#+END_SRC
+
+I also had to dissable the ~org.freedesktop.ibus.panel.emoji~ hotkey with ~gsettings~ to get ~C-e~ back.
+#+BEGIN_SRC
+gsettings set org.freedesktop.ibus.panel.emoji hotkey []
+#+END_SRC
+
+[1] - https://bugzilla.redhat.com/show_bug.cgi?id=1405629
+
+** Mouse Button Configuration
 GNOME and Wayland have changed how input devices are configured. No
 more ~xinput~ or ~setxkbmap~. The "new" way is to use ~hwdb~. It works
 well once you figure it out.
